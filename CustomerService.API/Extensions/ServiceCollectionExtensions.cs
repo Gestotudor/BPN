@@ -1,6 +1,9 @@
 using BuildingBlocks.Responses;
 using CustomerService.Application.Common.Results;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.OpenApi.Models;
+using System.Reflection;
+using System.Text.Json.Serialization;
 
 namespace CustomerService.API.Extensions;
 
@@ -9,6 +12,10 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddApiServices(this IServiceCollection services)
     {
         services.AddControllers()
+            .AddJsonOptions(options =>
+            {
+                options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+            })
             .ConfigureApiBehaviorOptions(options =>
             {
                 options.InvalidModelStateResponseFactory = context =>
@@ -29,24 +36,57 @@ public static class ServiceCollectionExtensions
         services.AddEndpointsApiExplorer();
         services.AddSwaggerGen(options =>
         {
-            options.SwaggerDoc("v1", new() { Title = "MoneyBee Customer API", Version = "v1" });
-            options.AddSecurityDefinition("ApiKey", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            options.SwaggerDoc("v1", new OpenApiInfo
             {
-                Description = "API Key authentication using the X-API-Key header.",
-                Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
+                Title = "MoneyBee Customer API",
+                Version = "v1",
+                Description = "Customer registration, lookup, validation, and status management endpoints for MoneyBee.",
+                Contact = new OpenApiContact
+                {
+                    Name = "MoneyBee Platform Team",
+                    Email = "platform@moneybee.local"
+                },
+                License = new OpenApiLicense
+                {
+                    Name = "Proprietary - Internal Use"
+                }
+            });
+
+            foreach (var xmlFile in new[]
+                     {
+                         $"{Assembly.GetExecutingAssembly().GetName().Name}.xml",
+                         "CustomerService.Application.xml",
+                         "CustomerService.Domain.xml",
+                         "BuildingBlocks.xml"
+                     })
+            {
+                var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+                if (File.Exists(xmlPath))
+                {
+                    options.IncludeXmlComments(xmlPath, includeControllerXmlComments: true);
+                }
+            }
+
+            options.SchemaFilter<CustomerEnumSchemaFilter>();
+            options.OperationFilter<CustomerExamplesOperationFilter>();
+
+            options.AddSecurityDefinition("ApiKey", new OpenApiSecurityScheme
+            {
+                Description = "API key authentication using the `X-API-Key` header.",
+                Type = SecuritySchemeType.ApiKey,
                 Name = "X-API-Key",
-                In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+                In = ParameterLocation.Header,
                 Scheme = "ApiKeyScheme"
             });
 
-            options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+            options.AddSecurityRequirement(new OpenApiSecurityRequirement
             {
                 {
-                    new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+                    new OpenApiSecurityScheme
                     {
-                        Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                        Reference = new OpenApiReference
                         {
-                            Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                            Type = ReferenceType.SecurityScheme,
                             Id = "ApiKey"
                         }
                     },

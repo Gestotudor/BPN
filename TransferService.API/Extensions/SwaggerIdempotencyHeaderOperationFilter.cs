@@ -7,7 +7,8 @@ public sealed class SwaggerIdempotencyHeaderOperationFilter : IOperationFilter
 {
     public void Apply(OpenApiOperation operation, OperationFilterContext context)
     {
-        if (!string.Equals(context.ApiDescription.HttpMethod, "POST", StringComparison.OrdinalIgnoreCase))
+        if (!string.Equals(context.ApiDescription.HttpMethod, "POST", StringComparison.OrdinalIgnoreCase) ||
+            !string.Equals(context.ApiDescription.RelativePath?.TrimEnd('/'), "api/transfers", StringComparison.OrdinalIgnoreCase))
         {
             return;
         }
@@ -17,8 +18,8 @@ public sealed class SwaggerIdempotencyHeaderOperationFilter : IOperationFilter
         {
             Name = "Idempotency-Key",
             In = ParameterLocation.Header,
-            Required = false,
-            Description = "Required for transfer creation to guarantee idempotency."
+            Required = true,
+            Description = "Required unique key that makes transfer creation idempotent."
         });
     }
 }

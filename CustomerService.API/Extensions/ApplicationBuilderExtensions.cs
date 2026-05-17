@@ -15,7 +15,14 @@ public static class ApplicationBuilderExtensions
         if (app.Environment.IsDevelopment())
         {
             app.UseSwagger();
-            app.UseSwaggerUI();
+            app.UseSwaggerUI(options =>
+            {
+                options.DocumentTitle = "MoneyBee Customer API";
+                options.SwaggerEndpoint("/swagger/v1/swagger.json", "MoneyBee Customer API v1");
+                options.DisplayRequestDuration();
+                options.DocExpansion(Swashbuckle.AspNetCore.SwaggerUI.DocExpansion.None);
+                options.DefaultModelsExpandDepth(-1);
+            });
         }
 
         app.UseHttpsRedirection();

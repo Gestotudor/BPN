@@ -1,16 +1,27 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+namespace TransferService.Domain.Enums;
 
-namespace TransferService.Domain.Enums
+/// <summary>
+/// Lifecycle status of a money transfer.
+/// </summary>
+public enum TransferStatus
 {
-    public enum TransferStatus
-    {
-        Pending = 1,
-        Completed = 2,
-        Cancelled = 3,
-        Failed = 4
-    }
+    /// <summary>
+    /// Transfer created but not yet received.
+    /// </summary>
+    Pending = 1,
+
+    /// <summary>
+    /// Receiver received the money.
+    /// </summary>
+    Completed = 2,
+
+    /// <summary>
+    /// Transfer cancelled before receiving.
+    /// </summary>
+    Cancelled = 3,
+
+    /// <summary>
+    /// Transfer rejected or failed.
+    /// </summary>
+    Failed = 4
 }

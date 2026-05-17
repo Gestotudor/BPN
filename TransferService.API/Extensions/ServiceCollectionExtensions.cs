@@ -1,6 +1,8 @@
 using BuildingBlocks.Responses;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi.Models;
+using System.Reflection;
+using System.Text.Json.Serialization;
 using TransferService.Application.Common.Results;
 
 namespace TransferService.API.Extensions;
@@ -11,6 +13,10 @@ public static class ServiceCollectionExtensions
     {
         services.AddHttpContextAccessor();
         services.AddControllers()
+            .AddJsonOptions(options =>
+            {
+                options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+            })
             .ConfigureApiBehaviorOptions(options =>
             {
                 options.InvalidModelStateResponseFactory = context =>
@@ -30,10 +36,42 @@ public static class ServiceCollectionExtensions
         services.AddEndpointsApiExplorer();
         services.AddSwaggerGen(options =>
         {
-            options.SwaggerDoc("v1", new OpenApiInfo { Title = "MoneyBee Transfer API", Version = "v1" });
+            options.SwaggerDoc("v1", new OpenApiInfo
+            {
+                Title = "MoneyBee Transfer API",
+                Version = "v1",
+                Description = "Money transfer creation, receipt, cancellation, and internal customer-status notification endpoints for MoneyBee.",
+                Contact = new OpenApiContact
+                {
+                    Name = "MoneyBee Platform Team",
+                    Email = "platform@moneybee.local"
+                },
+                License = new OpenApiLicense
+                {
+                    Name = "Proprietary - Internal Use"
+                }
+            });
+
+            foreach (var xmlFile in new[]
+                     {
+                         $"{Assembly.GetExecutingAssembly().GetName().Name}.xml",
+                         "TransferService.Application.xml",
+                         "TransferService.Domain.xml",
+                         "BuildingBlocks.xml"
+                     })
+            {
+                var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+                if (File.Exists(xmlPath))
+                {
+                    options.IncludeXmlComments(xmlPath, includeControllerXmlComments: true);
+                }
+            }
+
+            options.SchemaFilter<TransferEnumSchemaFilter>();
+            options.OperationFilter<TransferExamplesOperationFilter>();
             options.AddSecurityDefinition("ApiKey", new OpenApiSecurityScheme
             {
-                Description = "API Key authentication using the X-API-Key header.",
+                Description = "API key authentication using the `X-API-Key` header.",
                 Type = SecuritySchemeType.ApiKey,
                 Name = "X-API-Key",
                 In = ParameterLocation.Header
