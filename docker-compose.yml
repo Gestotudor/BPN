@@ -1,0 +1,138 @@
+services:
+  auth-db:
+    image: postgres:16
+    container_name: moneybee-auth-db
+    environment:
+      POSTGRES_DB: moneybee_auth
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5435:5432"
+    volumes:
+      - auth-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d moneybee_auth"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  auth-api:
+    build:
+      context: .
+      dockerfile: AuthService.API/Dockerfile
+    container_name: moneybee-auth-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__AuthDb: Host=auth-db;Port=5432;Database=moneybee_auth;Username=postgres;Password=postgres
+      Seed__AdminClientName: MoneyBee Admin
+      Seed__AdminApiKey: mb_live_change_this_admin_key
+    depends_on:
+      auth-db:
+        condition: service_healthy
+    ports:
+      - "5101:8080"
+
+  customer-db:
+    image: postgres:16
+    container_name: moneybee-customer-db
+    environment:
+      POSTGRES_DB: moneybee_customer
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - customer-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d moneybee_customer"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  customer-api:
+    build:
+      context: .
+      dockerfile: CustomerService.API/Dockerfile
+    container_name: moneybee-customer-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__CustomerDb: Host=customer-db;Port=5432;Database=moneybee_customer;Username=postgres;Password=postgres
+      ExternalServices__AuthService__BaseUrl: http://auth-api:8080
+      ExternalServices__KycService__BaseUrl: http://kyc-service:8082
+      ExternalServices__TransferService__BaseUrl: http://transfer-api:8080
+    depends_on:
+      customer-db:
+        condition: service_healthy
+      auth-api:
+        condition: service_started
+      kyc-service:
+        condition: service_started
+
+  transfer-db:
+    image: postgres:16
+    container_name: moneybee-transfer-db
+    environment:
+      POSTGRES_DB: moneybee_transfer
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5434:5432"
+    volumes:
+      - transfer-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d moneybee_transfer"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  transfer-api:
+    build:
+      context: .
+      dockerfile: TransferService.API/Dockerfile
+    container_name: moneybee-transfer-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__TransferDb: Host=transfer-db;Port=5432;Database=moneybee_transfer;Username=postgres;Password=postgres
+      ExternalServices__FraudService__BaseUrl: http://fraud-service:8081
+      ExternalServices__CustomerService__BaseUrl: http://customer-api:8080
+      ExternalServices__ExchangeService__BaseUrl: http://exchange-rate-service:8083
+      ExternalServices__AuthService__BaseUrl: http://auth-api:8080
+    depends_on:
+      transfer-db:
+        condition: service_healthy
+      auth-api:
+        condition: service_started
+      customer-api:
+        condition: service_started
+      fraud-service:
+        condition: service_started
+      exchange-rate-service:
+        condition: service_started
+    ports:
+      - "5103:8080"
+
+  fraud-service:
+    image: bpnpay/fraud-service:latest
+    container_name: fraud-service
+    ports:
+      - "6001:8081"
+
+  kyc-service:
+    image: bpnpay/kyc-service:latest
+    container_name: kyc-service
+    ports:
+      - "6002:8082"
+
+  exchange-rate-service:
+    image: bpnpay/exchange-rate-service:latest
+    container_name: exchange-rate-service
+    ports:
+      - "6003:8083"
+
+volumes:
+  auth-db-data:
+  customer-db-data:
+  transfer-db-data:
