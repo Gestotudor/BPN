@@ -1,0 +1,26 @@
+<Solution>
+  <Folder Name="/AuthService/">
+    <Project Path="AuthService.API/AuthService.API.csproj" />
+    <Project Path="AuthService.Application/AuthService.Application.csproj" />
+    <Project Path="AuthService.Domain/AuthService.Domain.csproj" />
+    <Project Path="AuthService.Infrastructure/AuthService.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/CustomerService/">
+    <Project Path="CustomerService.API/CustomerService.API.csproj" />
+    <Project Path="CustomerService.Application/CustomerService.Application.csproj" />
+    <Project Path="CustomerService.Domain/CustomerService.Domain.csproj" />
+    <Project Path="CustomerService.Infrastructure/CustomerService.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/Shared/">
+    <Project Path="BuildingBlocks/BuildingBlocks.csproj" />
+  </Folder>
+  <Folder Name="/Solution Items/">
+    <File Path="docker-compose.yml" />
+  </Folder>
+  <Folder Name="/TransferService/">
+    <Project Path="TransferService.API/TransferService.API.csproj" />
+    <Project Path="TransferService.Application/TransferService.Application.csproj" />
+    <Project Path="TransferService.Domain/TransferService.Domain.csproj" />
+    <Project Path="TransferService.Infrastructure/TransferService.Infrastructure.csproj" />
+  </Folder>
+</Solution>
